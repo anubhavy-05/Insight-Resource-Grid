@@ -1,9 +1,12 @@
 from fastapi import FastAPI
+import models
+from database import engine
 
-# Humne FastAPI ka ek instance (object) banaya
+# Ye line database me saari tables (jaise Users) create kar degi
+models.Base.metadata.create_all(bind=engine)
+
 app = FastAPI()
 
-# Ye hamara pehla "Route" hai
 @app.get("/")
 def home():
     return {"message": "Insight-Resource-Grid Backend is Live!"}
