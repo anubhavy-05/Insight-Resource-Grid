@@ -1,4 +1,5 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 import models, schemas
@@ -55,10 +56,11 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     
     return new_user
 
-# --- LOGIN API ---
+# --- LOGIN API (Updated for Swagger UI) ---
 @app.post("/login/")
-def login(user_credentials: schemas.UserLogin, db: Session = Depends(get_db)):
-    user = db.query(models.User).filter(models.User.email == user_credentials.email).first()
+def login(user_credentials: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    # Swagger hamesha 'username' field bhejta hai form me, isliye hum usi ko email maan kar check karenge
+    user = db.query(models.User).filter(models.User.email == user_credentials.username).first()
     
     if not user:
         raise HTTPException(status_code=403, detail="Invalid Credentials")
@@ -78,3 +80,36 @@ def login(user_credentials: schemas.UserLogin, db: Session = Depends(get_db)):
     
     token = jwt.encode(token_data, SECRET_KEY, algorithm=ALGORITHM)
     return {"access_token": token, "token_type": "bearer"}
+
+
+
+# Ye Swagger UI ko batayega ki token kahan se lana hai
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+
+# --- SECURITY GUARD (Token Check Karne Wala Function) ---
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    try:
+        # Token ko khol kar check karo
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("sub")
+        
+        if email is None:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid Token")
+            
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials")
+
+    # Agar token sahi hai, toh database se user nikalo
+    user = db.query(models.User).filter(models.User.email == email).first()
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+        
+    return user
+
+# --- PROTECTED ROUTE (Sirf Login wale log yahan aa sakte hain) ---
+@app.get("/users/me", response_model=schemas.UserResponse)
+def read_user_profile(current_user: models.User = Depends(get_current_user)):
+    # Ye route sirf tab chalega jab 'get_current_user' token pass kar dega
+    return current_user
