@@ -58,30 +58,23 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
 # --- LOGIN API ---
 @app.post("/login/")
 def login(user_credentials: schemas.UserLogin, db: Session = Depends(get_db)):
-    # 1. Database me check karo ki is email se koi user hai ya nahi
     user = db.query(models.User).filter(models.User.email == user_credentials.email).first()
     
-    # Agar user nahi mila, toh error do (403 Forbidden)
     if not user:
         raise HTTPException(status_code=403, detail="Invalid Credentials")
     
-    # 2. Agar email mil gaya, toh password match karo
     is_password_correct = pwd_context.verify(user_credentials.password, user.hashed_password)
     
     if not is_password_correct:
         raise HTTPException(status_code=403, detail="Invalid Credentials")
     
-    # 3. Email aur Password dono sahi hain! Ab "Wristband" (Token) banao
     expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     
-    # Payload: Ye wo data hai jo token ke andar chhipa hoga
     token_data = {
-        "sub": user.email, # sub ka matlab subject (user ki pehchan)
-        "role": user.role, # Yahan pata chalega ki ye 'admin' hai ya 'user'
-        "exp": expire      # Expiry time
+        "sub": user.email, 
+        "role": user.role, 
+        "exp": expire      
     }
     
-    # Token Generate karna
     token = jwt.encode(token_data, SECRET_KEY, algorithm=ALGORITHM)
-    
     return {"access_token": token, "token_type": "bearer"}
