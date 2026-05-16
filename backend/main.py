@@ -113,3 +113,27 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
 def read_user_profile(current_user: models.User = Depends(get_current_user)):
     # Ye route sirf tab chalega jab 'get_current_user' token pass kar dega
     return current_user
+
+
+
+# --- SUBMIT RESOURCE API (Protected Route) ---
+@app.post("/resources/", response_model=schemas.ResourceResponse)
+def create_resource(
+    resource: schemas.ResourceCreate, 
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(get_current_user) # 🔒 Ye Lock hai!
+):
+    # Naya resource banana, aur owner_id me us user ki ID daalna jo token laya hai
+    new_resource = models.Resource(
+        title=resource.title,
+        description=resource.description,
+        link=resource.link,
+        owner_id=current_user.id  # 🔑 Foreign Key Connection
+    )
+    
+    # Database me save karna
+    db.add(new_resource)
+    db.commit()
+    db.refresh(new_resource)
+    
+    return new_resource
