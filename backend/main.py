@@ -6,6 +6,9 @@ import models, schemas
 from database import engine, SessionLocal
 import jwt
 from datetime import datetime, timedelta, timezone
+from typing import List
+
+
 
 # Database table create karna
 models.Base.metadata.create_all(bind=engine)
@@ -166,3 +169,13 @@ def approve_resource(
     db.refresh(resource)
     
     return {"message": "Resource Approved Successfully!", "resource": resource}
+
+
+
+# --- GET ALL APPROVED RESOURCES (Public Route) ---
+@app.get("/resources/", response_model=List[schemas.ResourceResponse])
+def get_approved_resources(db: Session = Depends(get_db)):
+    # Database se sirf wo resources nikalo jinka status "Approved" hai
+    approved_resources = db.query(models.Resource).filter(models.Resource.status == "Approved").all()
+    
+    return approved_resources 
