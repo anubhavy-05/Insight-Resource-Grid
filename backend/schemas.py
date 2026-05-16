@@ -20,3 +20,24 @@ class UserResponse(BaseModel):
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
+
+
+    # --- RESOURCE SCHEMAS ---
+
+# Jab user data bhejega (Upload karte waqt)
+class ResourceCreate(BaseModel):
+    title: str
+    description: str
+    link: str
+
+# Jab backend se data wapas aayega (Response me)
+class ResourceResponse(BaseModel):
+    id: int
+    title: str
+    description: str
+    link: str
+    status: str
+    owner_id: int
+
+    class Config:
+        from_attributes = True
