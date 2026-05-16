@@ -179,3 +179,26 @@ def get_approved_resources(db: Session = Depends(get_db)):
     approved_resources = db.query(models.Resource).filter(models.Resource.status == "Approved").all()
     
     return approved_resources 
+
+
+
+
+# --- DELETE RESOURCE API (Admin Only) ---
+@app.delete("/resources/{resource_id}")
+def delete_resource(
+    resource_id: int, 
+    db: Session = Depends(get_db), 
+    admin_user: models.User = Depends(get_admin_user) # 🔒 Sirf Admin isko chhu sakta hai
+):
+    # 1. Database me resource dhundo
+    resource = db.query(models.Resource).filter(models.Resource.id == resource_id).first()
+    
+    # Agar resource nahi mila
+    if not resource:
+        raise HTTPException(status_code=404, detail="Resource not found")
+    
+    # 2. Agar mil gaya, toh usko permanently delete kardo
+    db.delete(resource)
+    db.commit()
+    
+    return {"message": f"Resource {resource_id} has been permanently deleted."}
