@@ -115,6 +115,13 @@ def read_user_profile(current_user: models.User = Depends(get_current_user)):
     return current_user
 
 
+# --- ADMIN SECURITY GUARD ---
+def get_admin_user(current_user: models.User = Depends(get_current_user)):
+    # Agar user ka role admin nahi hai, toh seedha 403 error de do
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized. Admin access only!")
+    return current_user
+
 
 # --- SUBMIT RESOURCE API (Protected Route) ---
 @app.post("/resources/", response_model=schemas.ResourceResponse)
@@ -137,3 +144,25 @@ def create_resource(
     db.refresh(new_resource)
     
     return new_resource
+
+
+# --- APPROVE RESOURCE API (Admin Only) ---
+@app.put("/resources/{resource_id}/approve")
+def approve_resource(
+    resource_id: int, 
+    db: Session = Depends(get_db), 
+    admin_user: models.User = Depends(get_admin_user) # 🔒 Ye Naya, zyada strict Lock hai
+):
+    # 1. Pehle database me resource dhundo
+    resource = db.query(models.Resource).filter(models.Resource.id == resource_id).first()
+    
+    # Agar resource mila hi nahi
+    if not resource:
+        raise HTTPException(status_code=404, detail="Resource not found")
+    
+    # 2. Agar mil gaya, toh uska status update kardo
+    resource.status = "Approved"
+    db.commit()
+    db.refresh(resource)
+    
+    return {"message": "Resource Approved Successfully!", "resource": resource}
