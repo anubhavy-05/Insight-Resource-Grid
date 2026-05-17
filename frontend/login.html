@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Insight Resource Grid</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f9; display: flex; justify-content: center; align-items: center; height: 80vh; }
+        .login-container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 100%; max-width: 350px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        .submit-btn { width: 100%; padding: 10px; background-color: #007bff; color: white; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; }
+        .error-msg { color: red; margin-top: 10px; text-align: center; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+    <div class="login-container">
+        <h2 style="text-align: center;">🔐 Login</h2>
+        
+        <form id="login-form">
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" required placeholder="Enter your email">
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" required placeholder="Enter your password">
+            </div>
+            
+            <button type="submit" class="submit-btn">Login</button>
+        </form>
+        
+        <div id="error-message" class="error-msg"></div>
+    </div>
+
+    <script>
+        document.getElementById('login-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('error-message');
+            errorDiv.innerText = "Logging in...";
+
+            try {
+                // FastAPI ka OAuth2PasswordRequestForm special format (URL-encoded) maangta hai
+                const formData = new URLSearchParams();
+                formData.append('username', email); // Swagger me email ko username bolte hain
+                formData.append('password', password);
+
+                const response = await fetch('http://127.0.0.1:8000/login/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // 🎉 JADOO YAHAN HAI: Token ko browser ki memory me save kar lo
+                    localStorage.setItem('insight_token', data.access_token);
+                    
+                    errorDiv.style.color = "green";
+                    errorDiv.innerText = "Login Successful! Redirecting...";
+                    
+                    // User ko upload page par bhej do
+                    setTimeout(() => {
+                        window.location.href = "upload.html";
+                    }, 1000);
+                } else {
+                    errorDiv.style.color = "red";
+                    errorDiv.innerText = "Invalid Email or Password!";
+                }
+            } catch (error) {
+                console.error("Error:", error);
+                errorDiv.style.color = "red";
+                errorDiv.innerText = "Could not connect to server.";
+            }
+        });
+    </script>
+</body>
+</html>
