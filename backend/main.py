@@ -202,3 +202,16 @@ def delete_resource(
     db.commit()
     
     return {"message": f"Resource {resource_id} has been permanently deleted."}
+
+
+
+# --- GET MY UPLOADS API (Logged-in Users Only) ---
+@app.get("/my-uploads/", response_model=List[schemas.ResourceResponse])
+def get_my_uploads(
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(get_current_user) # 🔒 Lock (Sirf logged-in users ke liye)
+):
+    # Database se sirf wahi resources nikalo jinki owner_id current user ki ID se match karti ho
+    my_resources = db.query(models.Resource).filter(models.Resource.owner_id == current_user.id).all()
+    
+    return my_resources
