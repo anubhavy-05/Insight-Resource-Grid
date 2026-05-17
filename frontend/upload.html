@@ -55,11 +55,19 @@
     </div>
 
     <script>
-        // ⚠️ ATTENTION: Swagger se apna lamba access_token copy karke yahan paste kijiye!
-        const MY_JWT_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYmhpODQwMDY3M0BnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJleHAiOjE3NzkwNDY3MjV9.f0eFTAx58-QoEOnFdEZzu7HNfoAfKsv-CiVm6qyT2Mk";
+
+        // 🚀 SMART CHECK: Check karo ki user logged in hai ya nahi
+        const MY_JWT_TOKEN = localStorage.getItem('insight_token');
+        
+        if (!MY_JWT_TOKEN) {
+            alert("Please login first to upload resources!");
+            window.location.href = "login.html"; // Wapas login par bhej do
+        }
 
         document.getElementById('upload-form').addEventListener('submit', async function(e) {
-            e.preventDefault(); // Page ko reload hone se rokna
+            e.preventDefault();
+            // ... (baaki ka poora fetch wala code waisa hi rahega) ...
+
 
             // Input fields se values nikaalna
             const title = document.getElementById('title').value;
