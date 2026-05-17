@@ -235,3 +235,15 @@ def get_my_uploads(
     my_resources = db.query(models.Resource).filter(models.Resource.owner_id == current_user.id).all()
     
     return my_resources
+
+
+
+# --- GET PENDING RESOURCES (Admin Dashboard Ke Liye) ---
+@app.get("/admin/resources/pending", response_model=List[schemas.ResourceResponse])
+def get_pending_resources(
+    db: Session = Depends(get_db), 
+    admin_user: models.User = Depends(get_admin_user) # 🔒 Sirf Admin allowed hai
+):
+    # Database se sirf wo resources nikalo jinka status "Pending" hai
+    pending_resources = db.query(models.Resource).filter(models.Resource.status == "Pending").all()
+    return pending_resources
