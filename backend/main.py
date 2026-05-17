@@ -7,6 +7,7 @@ from database import engine, SessionLocal
 import jwt
 from datetime import datetime, timedelta, timezone
 from typing import List
+from fastapi.middleware.cors import CORSMiddleware
 
 
 
@@ -18,6 +19,25 @@ app = FastAPI()
 SECRET_KEY = "my_super_secret_key" 
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30 # Token 30 minute me expire ho jayega
+
+
+# --- CORS SETUP (Frontend Bridge) ---
+# Yahan hum un sabhi frontend ports ko allow kar rahe hain jahan se request aa sakti hai
+origins = [
+    "http://localhost:3000",      # Agar aap React (CRA) use karenge
+    "http://localhost:5173",      # Agar aap React (Vite) use karenge
+    "http://127.0.0.1:5500",      # Agar aap normal HTML/JS (VS Code Live Server) use karenge
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,    # Sirf in URLs ko allow karo
+    allow_credentials=True,   # Cookies aur Tokens allow karo
+    allow_methods=["*"],      # GET, POST, PUT, DELETE sabhi allow karo
+    allow_headers=["*"],      # Har tarah ka data (Headers) allow karo
+)
+
+
 
 # Password Hash karne ka setup
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
