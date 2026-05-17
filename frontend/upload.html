@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Resource</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f9; }
+        .form-container {
+            background: white;
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group input, .form-group textarea {
+            width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;
+        }
+        .submit-btn {
+            width: 100%; padding: 10px; background-color: #28a745; color: white; border: none; border-radius: 4px; font-size: 16px; cursor: pointer;
+        }
+        .nav-link { display: block; text-align: center; margin-top: 15px; color: #007bff; text-decoration: none; }
+    </style>
+</head>
+<body>
+
+    <div class="form-container">
+        <h2>🚀 Share a New Resource</h2>
+        
+        <form id="upload-form">
+            <div class="form-group">
+                <label for="title">Resource Title</label>
+                <input type="text" id="title" placeholder="e.g., Python Cheat Sheet" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="description">Description</label>
+                <textarea id="description" rows="3" placeholder="What is this resource about?" required></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="link">Drive / Website Link</label>
+                <input type="url" id="link" placeholder="https://drive.google.com/..." required>
+            </div>
+            
+            <button type="submit" class="submit-btn">Submit Resource</button>
+        </form>
+        
+        <div id="message" style="margin-top: 15px; text-align: center; font-weight: bold;"></div>
+        
+        <a href="index.html" class="nav-link">⬅ Back to Approved Resources</a>
+    </div>
+
+    <script>
+        // ⚠️ ATTENTION: Swagger se apna lamba access_token copy karke yahan paste kijiye!
+        const MY_JWT_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYmhpODQwMDY3M0BnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJleHAiOjE3NzkwNDY3MjV9.f0eFTAx58-QoEOnFdEZzu7HNfoAfKsv-CiVm6qyT2Mk";
+
+        document.getElementById('upload-form').addEventListener('submit', async function(e) {
+            e.preventDefault(); // Page ko reload hone se rokna
+
+            // Input fields se values nikaalna
+            const title = document.getElementById('title').value;
+            const description = document.getElementById('description').value;
+            const link = document.getElementById('link').value;
+            const messageDiv = document.getElementById('message');
+
+            messageDiv.style.color = "black";
+            messageDiv.innerText = "Uploading...";
+
+            try {
+                // Backend API ko POST request bhejna
+                const response = await fetch('http://127.0.0.1:8000/resources/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        // 🔒 Security Guard ko token dikhana
+                        'Authorization': `Bearer ${MY_JWT_TOKEN}`
+                    },
+                    body: JSON.stringify({
+                        title: title,
+                        description: description,
+                        link: link
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    messageDiv.style.color = "green";
+                    messageDiv.innerText = "🎉 Resource Submitted Successfully! Status is Pending.";
+                    document.getElementById('upload-form').reset(); // Form khali kar do
+                } else {
+                    messageDiv.style.color = "red";
+                    messageDiv.innerText = `Error: ${data.detail || "Upload failed"}`;
+                }
+
+            } catch (error) {
+                console.error("Error:", error);
+                messageDiv.style.color = "red";
+                messageDiv.innerText = "Could not connect to Backend server.";
+            }
+        });
+    </script>
+
+</body>
+</html>
