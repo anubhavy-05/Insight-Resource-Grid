@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Insight Resource Grid</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f9; }
+        .resource-card {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .resource-title { color: #333; margin-top: 0; }
+        .resource-link {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 8px 15px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>📚 Approved Resources</h1>
+    
+    <div id="resources-container">
+        <p>Loading resources from backend...</p>
+    </div>
+
+    <script>
+        // Ye function aapke Python Backend ko call lagayega
+        async function fetchResources() {
+            try {
+                // Hamari wo GET API jo humne backend me banayi thi
+                const response = await fetch('http://127.0.0.1:8000/resources/');
+                
+                // Data ko JSON format me badalna
+                const resources = await response.json();
+                
+                // HTML me jahan data dikhana hai usko select karna
+                const container = document.getElementById('resources-container');
+                container.innerHTML = ''; // Pehle ka "Loading..." text hata do
+
+                // Har ek resource ke liye ek naya HTML Card banana
+                resources.forEach(resource => {
+                    const card = document.createElement('div');
+                    card.className = 'resource-card';
+                    
+                    card.innerHTML = `
+                        <h2 class="resource-title">${resource.title}</h2>
+                        <p>${resource.description}</p>
+                        <p><strong>Uploaded by User ID:</strong> ${resource.owner_id}</p>
+                        <a href="${resource.link}" class="resource-link" target="_blank">View Resource</a>
+                    `;
+                    
+                    // Card ko screen par daal do
+                    container.appendChild(card);
+                });
+
+            } catch (error) {
+                console.error("Error connecting to backend:", error);
+                document.getElementById('resources-container').innerHTML = "<p style='color:red;'>Failed to load data. Is backend server running?</p>";
+            }
+        }
+
+        // Jaise hi page khule, turant data fetch karna shuru kardo
+        fetchResources();
+    </script>
+
+</body>
+</html>
