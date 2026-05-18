@@ -5,73 +5,83 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Insight Resource Grid</title>
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f9; }
-        .resource-card {
-            background: white;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 15px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
+        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f9; max-width: 900px; margin: 0 auto; }
+        .header-container { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        
+        /* 🔍 Search Bar Style */
+        .search-input { padding: 12px; width: 100%; max-width: 400px; border: 2px solid #007bff; border-radius: 8px; font-size: 16px; outline: none; transition: 0.3s; }
+        .search-input:focus { box-shadow: 0 0 8px rgba(0, 123, 255, 0.5); }
+        
+        .resource-card { background: white; border-radius: 8px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
         .resource-title { color: #333; margin-top: 0; }
-        .resource-link {
-            display: inline-block;
-            margin-top: 10px;
-            padding: 8px 15px;
-            background-color: #007bff;
-            color: white;
-            text-decoration: none;
-            border-radius: 4px;
-        }
+        .resource-link { display: inline-block; margin-top: 10px; padding: 8px 15px; background-color: #007bff; color: white; text-decoration: none; border-radius: 4px; }
+        .nav-links a { margin-left: 15px; color: #007bff; text-decoration: none; font-weight: bold; padding: 8px 12px; background: #e9ecef; border-radius: 4px; }
     </style>
 </head>
 <body>
 
-    <h1>📚 Approved Resources</h1>
+    <div class="header-container">
+        <h1>📚 Approved Resources</h1>
+        <div class="nav-links">
+            <a href="upload.html">➕ Upload New</a>
+            <a href="admin.html">👑 Admin</a>
+        </div>
+    </div>
     
+    <input type="text" id="searchBar" class="search-input" placeholder="🔍 Search by title or description..." onkeyup="filterResources()">
+    <br><br>
+
     <div id="resources-container">
         <p>Loading resources from backend...</p>
     </div>
 
     <script>
-        // Ye function aapke Python Backend ko call lagayega
+        // Ye function aapke Python Backend se data layega
         async function fetchResources() {
             try {
-                // Hamari wo GET API jo humne backend me banayi thi
                 const response = await fetch('http://127.0.0.1:8000/resources/');
-                
-                // Data ko JSON format me badalna
                 const resources = await response.json();
                 
-                // HTML me jahan data dikhana hai usko select karna
                 const container = document.getElementById('resources-container');
-                container.innerHTML = ''; // Pehle ka "Loading..." text hata do
+                container.innerHTML = ''; 
 
-                // Har ek resource ke liye ek naya HTML Card banana
                 resources.forEach(resource => {
                     const card = document.createElement('div');
                     card.className = 'resource-card';
                     
                     card.innerHTML = `
                         <h2 class="resource-title">${resource.title}</h2>
-                        <p>${resource.description}</p>
-                        <p><strong>Uploaded by User ID:</strong> ${resource.owner_id}</p>
+                        <p class="resource-desc">${resource.description}</p>
+                        <p><small>Uploaded by User ID: ${resource.owner_id}</small></p>
                         <a href="${resource.link}" class="resource-link" target="_blank">View Resource</a>
                     `;
-                    
-                    // Card ko screen par daal do
                     container.appendChild(card);
                 });
 
             } catch (error) {
-                console.error("Error connecting to backend:", error);
-                document.getElementById('resources-container').innerHTML = "<p style='color:red;'>Failed to load data. Is backend server running?</p>";
+                document.getElementById('resources-container').innerHTML = "<p style='color:red;'>Failed to load data.</p>";
             }
         }
 
-        // Jaise hi page khule, turant data fetch karna shuru kardo
+        // 🚀 SMART SEARCH FUNCTION (Frontend Filtering)
+        function filterResources() {
+            let input = document.getElementById('searchBar').value.toLowerCase();
+            let cards = document.getElementsByClassName('resource-card');
+
+            for (let i = 0; i < cards.length; i++) {
+                let title = cards[i].querySelector('.resource-title').innerText.toLowerCase();
+                let desc = cards[i].querySelector('.resource-desc').innerText.toLowerCase();
+                
+                // Agar title ya description me wo word hai, toh card dikhao, warna hide kardo
+                if (title.includes(input) || desc.includes(input)) {
+                    cards[i].style.display = ""; 
+                } else {
+                    cards[i].style.display = "none"; 
+                }
+            }
+        }
+
         fetchResources();
     </script>
-
 </body>
 </html>
