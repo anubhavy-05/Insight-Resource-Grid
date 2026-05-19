@@ -9,6 +9,10 @@ from datetime import datetime, timedelta, timezone
 from typing import List
 from fastapi.middleware.cors import CORSMiddleware
 
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
+from pydantic import BaseModel
+
 
 
 # Database table create karna
@@ -19,6 +23,14 @@ app = FastAPI()
 SECRET_KEY = "my_super_secret_key" 
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30 # Token 30 minute me expire ho jayega
+
+
+# ⚠️ YAHAN APNA COPY KIYA HUA CLIENT ID PASTE KARIYE
+GOOGLE_CLIENT_ID = "394367827612-5rmpea7fk768ih1l0tv4pmmbpnejo61p.apps.googleusercontent.com"
+
+class GoogleToken(BaseModel):
+    token: str
+
 
 
 # --- CORS SETUP (Frontend Bridge) ---
@@ -247,3 +259,42 @@ def get_pending_resources(
     # Database se sirf wo resources nikalo jinka status "Pending" hai
     pending_resources = db.query(models.Resource).filter(models.Resource.status == "Pending").all()
     return pending_resources
+
+
+
+# --- GOOGLE LOGIN API ---
+@app.post("/auth/google")
+def google_login(google_data: GoogleToken, db: Session = Depends(get_db)):
+    try:
+        # Google se token verify karwao
+        idinfo = id_token.verify_oauth2_token(google_data.token, google_requests.Request(), GOOGLE_CLIENT_ID)
+        email = idinfo['email']
+        
+        # Check karo ki ye user pehle se database me hai ya nahi
+        user = db.query(models.User).filter(models.User.email == email).first()
+        
+        # Agar naya user hai, toh auto-signup kardo
+        if not user:
+            new_user = models.User(
+                email=email, 
+                hashed_password="google_oauth_dummy_password", 
+                role="user" # Default role user hoga
+            )
+            db.add(new_user)
+            db.commit()
+            db.refresh(new_user)
+            user = new_user
+        
+        # 🚀 FIX: Yahan hum manually VIP JWT token bana rahe hain
+        expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        token_data = {
+            "sub": user.email, 
+            "role": user.role, 
+            "exp": expire      
+        }
+        access_token = jwt.encode(token_data, SECRET_KEY, algorithm=ALGORITHM)
+        
+        return {"access_token": access_token, "token_type": "bearer", "role": user.role}
+
+    except ValueError:
+        raise HTTPException(status_code=401, detail="Invalid Google Token")
