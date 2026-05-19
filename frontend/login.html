@@ -3,85 +3,122 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Insight Resource Grid</title>
+    <title>Login - InsightGrid</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f9; display: flex; justify-content: center; align-items: center; height: 80vh; }
-        .login-container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 100%; max-width: 350px; }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
-        .form-group input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        .submit-btn { width: 100%; padding: 10px; background-color: #1f2022; color: white; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; }
-        .error-msg { color: red; margin-top: 10px; text-align: center; font-size: 14px; }
+        body { font-family: 'Poppins', sans-serif; background-color: #f8f9fa; }
+        .login-card { border-radius: 15px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.08); max-width: 400px; margin: 0 auto; margin-top: 10vh; }
+        .form-control:focus { border-color: #0d6efd; box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25); }
     </style>
 </head>
 <body>
 
-    <div class="login-container">
-        <h2 style="text-align: center;">🔐 Login</h2>
-        
-        <form id="login-form">
-            <div class="form-group">
-                <label for="email">Email</label>
-                <input type="email" id="email" required placeholder="Enter your email">
+    <div class="container">
+        <div class="card login-card p-4">
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <h3 class="fw-bold text-dark"><i class="bi bi-grid-1x2-fill text-primary me-2"></i>InsightGrid</h3>
+                    <p class="text-muted">Login to share and explore resources</p>
+                </div>
+                
+                <form id="login-form">
+                    <div class="mb-3">
+                        <label for="email" class="form-label fw-bold">Email</label>
+                        <input type="email" class="form-control" id="email" required placeholder="admin@example.com">
+                    </div>
+                    <div class="mb-4">
+                        <label for="password" class="form-label fw-bold">Password</label>
+                        <input type="password" class="form-control" id="password" required placeholder="Enter password">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 fw-bold py-2">Login with Email</button>
+                </form>
+
+                <div class="text-center mt-4 mb-3">
+                    <p class="text-muted fw-bold mb-2">OR</p>
+                    
+                    <div id="g_id_onload"
+                         data-client_id="394367827612-5rmpea7fk768ih1l0tv4pmmbpnejo61p.apps.googleusercontent.com"
+                         data-callback="handleGoogleLogin"
+                         data-auto_prompt="false">
+                    </div>
+                    
+                    <div class="g_id_signin d-flex justify-content-center" data-type="standard" data-size="large" data-theme="outline" data-text="sign_in_with" data-shape="rectangular" data-logo_alignment="left"></div>
+                </div>
+                
+                <div id="error-message" class="mt-3 text-center fw-bold fs-6"></div>
             </div>
-            
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" required placeholder="Enter your password">
-            </div>
-            
-            <button type="submit" class="submit-btn">Login</button>
-        </form>
-        
-        <div id="error-message" class="error-msg"></div>
+        </div>
     </div>
 
     <script>
+        // 1. Normal Email/Password Login
         document.getElementById('login-form').addEventListener('submit', async function(e) {
             e.preventDefault();
-            
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const errorDiv = document.getElementById('error-message');
-            errorDiv.innerText = "Logging in...";
+            errorDiv.className = "mt-3 text-center fw-bold fs-6 text-dark";
+            errorDiv.innerHTML = '<div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>Logging in...';
 
             try {
-                // FastAPI ka OAuth2PasswordRequestForm special format (URL-encoded) maangta hai
                 const formData = new URLSearchParams();
-                formData.append('username', email); // Swagger me email ko username bolte hain
+                formData.append('username', email);
                 formData.append('password', password);
 
                 const response = await fetch('http://127.0.0.1:8000/login/', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    },
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: formData
                 });
-
                 const data = await response.json();
 
                 if (response.ok) {
-                    // 🎉 JADOO YAHAN HAI: Token ko browser ki memory me save kar lo
                     localStorage.setItem('insight_token', data.access_token);
-                    
-                    errorDiv.style.color = "green";
-                    errorDiv.innerText = "Login Successful! Redirecting...";
-                    
-                    // User ko upload page par bhej do
-                    setTimeout(() => {
-                        window.location.href = "upload.html";
-                    }, 1000);
+                    errorDiv.className = "mt-3 text-center fw-bold fs-6 text-success";
+                    errorDiv.innerHTML = "<i class='bi bi-check-circle-fill me-2'></i>Login Successful!";
+                    setTimeout(() => { window.location.href = "upload.html"; }, 1000);
                 } else {
-                    errorDiv.style.color = "red";
+                    errorDiv.className = "mt-3 text-center fw-bold fs-6 text-danger";
                     errorDiv.innerText = "Invalid Email or Password!";
                 }
             } catch (error) {
-                console.error("Error:", error);
-                errorDiv.style.color = "red";
+                errorDiv.className = "mt-3 text-center fw-bold fs-6 text-danger";
                 errorDiv.innerText = "Could not connect to server.";
             }
         });
+
+        // 2. Google Login Handle Karne Wala Function
+        async function handleGoogleLogin(response) {
+            const errorDiv = document.getElementById('error-message');
+            errorDiv.className = "mt-3 text-center fw-bold fs-6 text-dark";
+            errorDiv.innerHTML = '<div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>Verifying Google Login...';
+
+            try {
+                const res = await fetch('http://127.0.0.1:8000/auth/google', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: response.credential })
+                });
+                
+                const data = await res.json();
+                
+                if (res.ok) {
+                    localStorage.setItem('insight_token', data.access_token);
+                    errorDiv.className = "mt-3 text-center fw-bold fs-6 text-success";
+                    errorDiv.innerHTML = "<i class='bi bi-check-circle-fill me-2'></i>Google Login Successful!";
+                    setTimeout(() => { window.location.href = "upload.html"; }, 1000);
+                } else {
+                    errorDiv.className = "mt-3 text-center fw-bold fs-6 text-danger";
+                    errorDiv.innerText = "Google Authentication Failed!";
+                }
+            } catch (err) {
+                errorDiv.className = "mt-3 text-center fw-bold fs-6 text-danger";
+                errorDiv.innerText = "Could not connect to server.";
+            }
+        }
     </script>
 </body>
 </html>
